@@ -11,6 +11,11 @@ import settingsRoutes from "../modules/settings/settings.routes";
 import activityRoutes from "../modules/activity/activity.routes";
 import sidebarRoutes from "../modules/sidebar/sidebar.routes";
 
+import divisionRoutes from "../modules/divisionRoutes";
+import classRoutes from "../modules/classRoutes";
+import admissionRoutes from "../modules/admission/admissionRoutes";
+
+
 
 // 👑 Super Admin Modules
 import superadminRoutes from "../modules/superadmin/superadmin.routes";
@@ -48,5 +53,10 @@ router.use("/accounts", accountRoutes);
 router.use("/talimat", talimatRoutes);
 router.use("/settings", settingsRoutes);
 router.use("/activity", activityRoutes);
+
+router.use("/divisions", divisionRoutes);
+router.use("/classes", classRoutes);
+router.use("/students/admission", admissionRoutes);
+
 
 export default router;

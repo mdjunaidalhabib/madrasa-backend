@@ -221,9 +221,6 @@ export const createMadrasa = async (req: Request, res: Response) => {
     const baseSlug = slugify(slug || name);
     const finalSlug = await makeUniqueSlug(baseSlug);
 
-    /* =========================
-       CREATE MADRASA
-    ========================= */
 
     const [madrasaResult]: any = await conn.query(
       `
