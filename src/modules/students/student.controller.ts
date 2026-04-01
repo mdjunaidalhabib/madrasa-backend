@@ -9,7 +9,16 @@ export const getStudents = async (req: Request, res: Response) => {
     const madrasaId = 1;
 
     const sql = `
-      SELECT id,name_bn,father_name,guardian_phone
+      SELECT 
+        id,
+        name_bn,
+        father_name,
+        guardian_phone,
+
+        division_id,
+        class_id,
+        previous_class_id
+
       FROM students
       WHERE madrasa_id = ?
       ORDER BY id DESC
@@ -36,9 +45,44 @@ export const getStudentById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    const [rows]: any = await db.query("SELECT * FROM students WHERE id = ?", [
-      id,
-    ]);
+    const sql = `
+      SELECT 
+        id,
+        name_bn,
+        name_ar,
+        nid,
+        gender,
+        dob,
+        age,
+
+        division_id,
+        class_id,
+        previous_class_id,
+
+        father_name,
+        father_name_ar,
+        father_nid,
+        father_occupation,
+
+        mother_name,
+        mother_nid,
+        mother_occupation,
+
+        guardian_phone,
+
+        division,
+        district,
+        thana,
+        village,
+
+        image,
+        roll
+
+      FROM students
+      WHERE id = ?
+    `;
+
+    const [rows]: any = await db.query(sql, [id]);
 
     res.json({
       success: true,
@@ -69,6 +113,10 @@ export const updateStudent = async (req: Request, res: Response) => {
       dob=?,
       age=?,
 
+      division_id=?,
+      class_id=?,
+      previous_class_id=?,
+
       father_name=?,
       father_name_ar=?,
       father_nid=?,
@@ -98,6 +146,10 @@ export const updateStudent = async (req: Request, res: Response) => {
       req.body.gender,
       req.body.dob,
       req.body.age,
+
+      req.body.division_id,
+      req.body.class_id,
+      req.body.previous_class_id,
 
       req.body.father_name,
       req.body.father_name_ar,
