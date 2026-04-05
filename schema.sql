@@ -392,21 +392,136 @@ CREATE TABLE IF NOT EXISTS teachers (
   FOREIGN KEY (madrasa_id) REFERENCES madrasas(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+
 -- ========================================================
--- ADMISSIONS
+-- 2. SUBJECTS TABLE
 -- ========================================================
 
-CREATE TABLE IF NOT EXISTS admissions (
+CREATE TABLE IF NOT EXISTS subjects (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  madrasa_id INT,
-  student_name VARCHAR(200),
-  division_id INT,
-  class_id INT,
-  guardian_phone VARCHAR(50),
-  status VARCHAR(50),
+
+  madrasa_id INT NOT NULL,
+  class_id INT NOT NULL,
+
+  name VARCHAR(100) NOT NULL,
+
+  teacher_id INT NULL,
+
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (madrasa_id) REFERENCES madrasas(id) ON DELETE CASCADE
+
+  UNIQUE KEY uniq_class_subject (class_id, name),
+
+  INDEX idx_madrasa (madrasa_id),
+  INDEX idx_class (class_id),
+
+  FOREIGN KEY (madrasa_id) REFERENCES madrasas(id) ON DELETE CASCADE,
+  FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE,
+  FOREIGN KEY (teacher_id) REFERENCES teachers(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
+
+-- ========================================================
+-- 3. TIME SLOTS TABLE (RECOMMENDED)
+-- ========================================================
+
+CREATE TABLE IF NOT EXISTS time_slots (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+
+  start_time TIME NOT NULL,
+  end_time TIME NOT NULL,
+
+  UNIQUE KEY uniq_slot (start_time, end_time)
+) ENGINE=InnoDB;
+
+-- Default slots (safe insert)
+INSERT INTO time_slots (start_time, end_time) VALUES
+('09:00:00','10:00:00'),
+('10:00:00','11:00:00'),
+('11:00:00','12:00:00'),
+('12:00:00','01:00:00')
+ON DUPLICATE KEY UPDATE start_time=start_time;
+
+-- ========================================================
+-- 4. ROUTINES TABLE
+-- ========================================================
+
+CREATE TABLE IF NOT EXISTS routines (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+
+  madrasa_id INT NOT NULL,
+  class_id INT NOT NULL,
+  subject_id INT NOT NULL,
+
+  slot_id INT NOT NULL,
+
+  day ENUM('sun','mon','tue','wed','thu','fri','sat') NOT NULL,
+
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  UNIQUE KEY uniq_routine (class_id, day, slot_id),
+
+  INDEX idx_class_day (class_id, day),
+
+  FOREIGN KEY (madrasa_id) REFERENCES madrasas(id) ON DELETE CASCADE,
+  FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE,
+  FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE,
+  FOREIGN KEY (slot_id) REFERENCES time_slots(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- ========================================================
+-- 5. SAMPLE DATA (FOR TEST)
+-- ========================================================
+
+-- Subjects
+INSERT INTO subjects (madrasa_id, class_id, name)
+VALUES
+(1, 1, 'বাংলা'),
+(1, 1, 'ইংরেজী'),
+(1, 1, 'গণিত'),
+(1, 2, 'বাংলা'),
+(1, 2, 'ইংরেজী'),
+(1, 2, 'গণিত'),
+(1, 3, 'বাংলা'),
+(1, 3, 'ইংরেজী'),
+(1, 3, 'গণিত'),
+(1, 4, 'বাংলা'),
+(1, 4, 'ইংরেজী'),
+(1, 4, 'গণিত'),
+
+(1, 5, 'কোরাআন হিফস'),
+(1, 5, 'মাসাইল'),
+(1, 5, 'তাজবিদ'),
+(1, 6, 'কোরাআন নাজেরা'),
+(1, 6, 'মাসাইল'),
+(1, 6, 'তাজবিদ'),
+
+(1, 7, 'মিযান'),
+
+(1, 8, 'নাহবেমীর'),
+(1, 9, 'হেদাঃ'),
+
+(1, 10, 'উর্দু কায়েদা'),
+(1, 11, 'তালিমুল ইসলাম'),
+
+(1, 12, 'কাফিয়া'),
+(1, 13, 'শরহে বেকায়া'),
+(1, 14, 'জালালাইন'),
+(1, 15, 'মেশকাত'),
+(1, 16, 'দাওরা'),
+(1, 16, 'দাওরা'),
+
+(1, 17, 'হাদিস'),
+(1, 18, 'মাসাআলা')
+
+ON DUPLICATE KEY UPDATE name=name;
+
+-- Routine (using slot_id)
+INSERT INTO routines (madrasa_id, class_id, subject_id, slot_id, day)
+VALUES
+(1, 5, 1, 1, 'sun'),
+(1, 5, 2, 2, 'sun')
+ON DUPLICATE KEY UPDATE day=day;
+
+SET FOREIGN_KEY_CHECKS = 1;
 
 -- ========================================================
 -- ACCOUNTS

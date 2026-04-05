@@ -1,62 +1,93 @@
 import { Router } from "express";
 
-// 🔐 Tenant Modules
+/* =========================
+   IMPORT ROUTES
+========================= */
+
+// 🔐 Auth & Core
 import authRoutes from "../modules/auth/auth.routes";
 import dashboardRoutes from "../modules/dashboard/dashboard.routes";
-import studentRoutes from "../modules/students/student.routes";
 import userRoutes from "../modules/users/user.routes";
-import accountRoutes from "../modules/accounts/account.routes";
-import talimatRoutes from "../modules/talimat/talimat.routes";
 import settingsRoutes from "../modules/settings/settings.routes";
 import activityRoutes from "../modules/activity/activity.routes";
 import sidebarRoutes from "../modules/sidebar/sidebar.routes";
 
-import divisionRoutes from "../modules/divisionRoutes";
-import classRoutes from "../modules/classRoutes";
+// 👨‍🎓 Student & Admission
+import studentRoutes from "../modules/students/student.routes";
 import admissionRoutes from "../modules/admission/admissionRoutes";
 
+// 💰 Accounts & Talimat
+import accountRoutes from "../modules/accounts/account.routes";
+import talimatRoutes from "../modules/talimat/talimat.routes";
+
+// 🏫 Academic Structure
+import divisionRoutes from "../modules/divisionRoutes";
+import classRoutes from "../modules/classRoutes";
+import subjectRoutes from "../modules/subject.routes";
 
 
-// 👑 Super Admin Modules
+// 👑 Super Admin
 import superadminRoutes from "../modules/superadmin/superadmin.routes";
 import superAdminAuthRoutes from "../modules/superadmin/superadmin.auth.routes";
 
 const router = Router();
 
 /* =========================================================
-   SUPER ADMIN ROUTES (Central Domain)
-   e.g. app.example.com/api/super
+   👑 SUPER ADMIN ROUTES
 ========================================================= */
 
-// Super Admin login
+// Super Admin Auth
 router.use("/super-admin", superAdminAuthRoutes);
 
-// Super Admin management (madrasas, plans, trash, etc.)
+// Super Admin Panel APIs
 router.use("/super", superadminRoutes);
 
 /* =========================================================
-   TENANT ROUTES (Subdomain Based)
-   e.g. madrasa1.example.com/api/...
+   🔐 TENANT ROUTES (Subdomain Based)
 ========================================================= */
 
-// Tenant authentication
+// Auth
 router.use("/auth", authRoutes);
 
-router.use("/sidebar", sidebarRoutes);
 // Dashboard
 router.use("/dashboard", dashboardRoutes);
 
-// Core Modules
-router.use("/students", studentRoutes);
+// Sidebar (UI config)
+router.use("/sidebar", sidebarRoutes);
+
+/* =========================
+   CORE MODULES
+========================= */
+
 router.use("/users", userRoutes);
-router.use("/accounts", accountRoutes);
-router.use("/talimat", talimatRoutes);
 router.use("/settings", settingsRoutes);
 router.use("/activity", activityRoutes);
 
-router.use("/divisions", divisionRoutes);
-router.use("/classes", classRoutes);
+/* =========================
+   STUDENT MODULE
+========================= */
+
+router.use("/students", studentRoutes);
 router.use("/students/admission", admissionRoutes);
 
+/* =========================
+   FINANCE & TALIMAT
+========================= */
+
+router.use("/accounts", accountRoutes);
+router.use("/talimat", talimatRoutes);
+
+/* =========================
+   ACADEMIC STRUCTURE
+========================= */
+
+// Division (Nurani, Hifz, Kitab, Taqassus)
+router.use("/divisions", divisionRoutes);
+
+// Classes under division
+router.use("/classes", classRoutes);
+
+// Academic modules
+router.use("/subjects", subjectRoutes);
 
 export default router;
