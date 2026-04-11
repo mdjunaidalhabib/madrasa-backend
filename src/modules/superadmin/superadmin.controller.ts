@@ -179,10 +179,6 @@ export const assignPlanToMadrasa = async (req: Request, res: Response) => {
   }
 };
 
-/* =========================================================
-   CREATE MADRASA
-========================================================= */
-
 export const createMadrasa = async (req: Request, res: Response) => {
   const conn = await db.getConnection();
 
@@ -202,6 +198,8 @@ export const createMadrasa = async (req: Request, res: Response) => {
       user_limit,
       divisions,
       modules,
+      classes,
+      books,
       default_users = [],
     } = req.body;
 
@@ -211,23 +209,20 @@ export const createMadrasa = async (req: Request, res: Response) => {
 
     const divisionIds = cleanNumberArray(divisions);
     const moduleIds = cleanNumberArray(modules);
+    const classIds = cleanNumberArray(classes);
+    const bookIds = cleanNumberArray(books);
 
     await conn.beginTransaction();
 
-    /* =========================
-       SLUG
-    ========================= */
-
+    /* ========================= SLUG ========================= */
     const baseSlug = slugify(slug || name);
     const finalSlug = await makeUniqueSlug(baseSlug);
 
-
+    /* ========================= MADRASA ========================= */
     const [madrasaResult]: any = await conn.query(
-      `
-      INSERT INTO madrasas 
-      (name, address, phone, slug, student_limit, user_limit, is_active)
-      VALUES (?, ?, ?, ?, ?, ?, 1)
-      `,
+      `INSERT INTO madrasas 
+       (name, address, phone, slug, student_limit, user_limit, is_active)
+       VALUES (?, ?, ?, ?, ?, ?, 1)`,
       [
         name,
         address || null,
@@ -240,10 +235,7 @@ export const createMadrasa = async (req: Request, res: Response) => {
 
     const madrasaId = madrasaResult.insertId;
 
-    /* =========================
-       CREATE ROLES
-    ========================= */
-
+    /* ========================= ROLES ========================= */
     const roleMap: Record<string, number> = {};
 
     const roles = [
@@ -254,61 +246,41 @@ export const createMadrasa = async (req: Request, res: Response) => {
 
     for (const r of roles) {
       const [roleResult]: any = await conn.query(
-        `
-        INSERT INTO roles (madrasa_id, key_name, name_bn)
-        VALUES (?, ?, ?)
-        `,
+        `INSERT INTO roles (madrasa_id, key_name, name_bn) VALUES (?, ?, ?)`,
         [madrasaId, r.key, r.name],
       );
-
       roleMap[r.key] = roleResult.insertId;
     }
 
-    /* =========================
-       CREATE DEFAULT USERS
-    ========================= */
-
+    /* ========================= USERS ========================= */
     for (const u of default_users) {
-      const roleKey = u.role.toUpperCase();
-
+      const roleKey = u.role?.toUpperCase();
       const roleId = roleMap[roleKey];
-
       if (!roleId) continue;
 
       const hashed = await bcrypt.hash(u.password, 10);
 
       await conn.query(
-        `
-        INSERT INTO users
-        (madrasa_id, name, email, password_hash, role_id, is_active)
-        VALUES (?, ?, ?, ?, ?, 1)
-        `,
-        [madrasaId, roleKey, u.email, hashed, roleId],
+        `INSERT INTO users
+         (madrasa_id, name, email, password_hash, role_id, is_active)
+         VALUES (?, ?, ?, ?, ?, 1)`,
+        [madrasaId, u.name || roleKey, u.email, hashed, roleId],
       );
     }
 
-    /* =========================
-       INSERT DIVISIONS
-    ========================= */
-
+    /* ========================= DIVISIONS ========================= */
     await conn.query(
-      `
-      INSERT INTO madrasa_divisions (madrasa_id, division_id, is_active)
-      SELECT ?, id, 0 FROM divisions
-      `,
+      `INSERT INTO madrasa_divisions (madrasa_id, division_id, is_active)
+       SELECT ?, id, 0 FROM divisions`,
       [madrasaId],
     );
 
     if (divisionIds.length > 0) {
       const ph = divisionIds.map(() => "?").join(",");
-
       await conn.query(
-        `
-        UPDATE madrasa_divisions
-        SET is_active=1
-        WHERE madrasa_id=?
-        AND division_id IN (${ph})
-        `,
+        `UPDATE madrasa_divisions
+         SET is_active=1
+         WHERE madrasa_id=? AND division_id IN (${ph})`,
         [madrasaId, ...divisionIds],
       );
     } else {
@@ -318,28 +290,19 @@ export const createMadrasa = async (req: Request, res: Response) => {
       );
     }
 
-    /* =========================
-       INSERT MODULES
-    ========================= */
-
+    /* ========================= MODULES ========================= */
     await conn.query(
-      `
-      INSERT INTO madrasa_modules (madrasa_id, module_id, is_active)
-      SELECT ?, id, 0 FROM modules
-      `,
+      `INSERT INTO madrasa_modules (madrasa_id, module_id, is_active)
+       SELECT ?, id, 0 FROM modules`,
       [madrasaId],
     );
 
     if (moduleIds.length > 0) {
       const ph = moduleIds.map(() => "?").join(",");
-
       await conn.query(
-        `
-        UPDATE madrasa_modules
-        SET is_active=1
-        WHERE madrasa_id=?
-        AND module_id IN (${ph})
-        `,
+        `UPDATE madrasa_modules
+         SET is_active=1
+         WHERE madrasa_id=? AND module_id IN (${ph})`,
         [madrasaId, ...moduleIds],
       );
     } else {
@@ -349,10 +312,51 @@ export const createMadrasa = async (req: Request, res: Response) => {
       );
     }
 
-    /* =========================
-       ASSIGN PLAN
-    ========================= */
+    /* ========================= ✅ CLASSES ========================= */
+    await conn.query(
+      `INSERT INTO madrasa_classes (madrasa_id, class_id, is_active)
+       SELECT ?, id, 0 FROM classes`,
+      [madrasaId],
+    );
 
+    if (classIds.length > 0) {
+      const ph = classIds.map(() => "?").join(",");
+      await conn.query(
+        `UPDATE madrasa_classes
+         SET is_active=1
+         WHERE madrasa_id=? AND class_id IN (${ph})`,
+        [madrasaId, ...classIds],
+      );
+    } else {
+      await conn.query(
+        `UPDATE madrasa_classes SET is_active=1 WHERE madrasa_id=?`,
+        [madrasaId],
+      );
+    }
+
+    /* ========================= ✅ BOOKS ========================= */
+    await conn.query(
+      `INSERT INTO madrasa_books (madrasa_id, book_id, is_active)
+       SELECT ?, id, 0 FROM books`,
+      [madrasaId],
+    );
+
+    if (bookIds.length > 0) {
+      const ph = bookIds.map(() => "?").join(",");
+      await conn.query(
+        `UPDATE madrasa_books
+         SET is_active=1
+         WHERE madrasa_id=? AND book_id IN (${ph})`,
+        [madrasaId, ...bookIds],
+      );
+    } else {
+      await conn.query(
+        `UPDATE madrasa_books SET is_active=1 WHERE madrasa_id=?`,
+        [madrasaId],
+      );
+    }
+
+    /* ========================= PLAN ========================= */
     if (plan_id) {
       const [planRows]: any = await conn.query(
         `SELECT * FROM plans WHERE id=? AND is_active=1 LIMIT 1`,
@@ -367,12 +371,9 @@ export const createMadrasa = async (req: Request, res: Response) => {
       const plan = planRows[0];
 
       await conn.query(
-        `
-        INSERT INTO madrasa_subscriptions
-        (madrasa_id, plan_id, start_date, end_date, is_active)
-        VALUES
-        (?, ?, CURDATE(), DATE_ADD(CURDATE(), INTERVAL ? DAY), 1)
-        `,
+        `INSERT INTO madrasa_subscriptions
+         (madrasa_id, plan_id, start_date, end_date, is_active)
+         VALUES (?, ?, CURDATE(), DATE_ADD(CURDATE(), INTERVAL ? DAY), 1)`,
         [madrasaId, plan.id, plan.duration_days],
       );
 
@@ -382,16 +383,11 @@ export const createMadrasa = async (req: Request, res: Response) => {
       );
     }
 
-    /* =========================
-       ACTIVITY LOG
-    ========================= */
-
+    /* ========================= LOG ========================= */
     await conn.query(
-      `
-      INSERT INTO activity_logs
-      (madrasa_id, action, entity, entity_id, details)
-      VALUES (?, 'MADRASA_CREATED', 'madrasa', ?, ?)
-      `,
+      `INSERT INTO activity_logs
+       (madrasa_id, action, entity, entity_id, details)
+       VALUES (?, 'MADRASA_CREATED', 'madrasa', ?, ?)`,
       [madrasaId, madrasaId, JSON.stringify({ name, slug: finalSlug })],
     );
 
@@ -602,10 +598,6 @@ export const getSuperAdminStats = async (_req: Request, res: Response) => {
   });
 };
 
-/* =========================================================
-   PERMANENT DELETE (Transaction Safe)
-========================================================= */
-
 export const permanentDeleteMadrasa = async (req: Request, res: Response) => {
   const id = Number(req.params.id);
   const conn = await db.getConnection();
@@ -613,12 +605,20 @@ export const permanentDeleteMadrasa = async (req: Request, res: Response) => {
   await conn.beginTransaction();
 
   try {
+    // 🔥 1. role_permissions
     await conn.query(
-      "DELETE FROM role_permissions WHERE role_id IN (SELECT id FROM roles WHERE madrasa_id=?)",
+      `DELETE FROM role_permissions 
+       WHERE role_id IN (SELECT id FROM roles WHERE madrasa_id=?)`,
       [id],
     );
-    await conn.query("DELETE FROM roles WHERE madrasa_id=?", [id]);
+
+    // 🔥 2. users (FIXED: direct madrasa_id OK)
     await conn.query("DELETE FROM users WHERE madrasa_id=?", [id]);
+
+    // 🔥 3. roles
+    await conn.query("DELETE FROM roles WHERE madrasa_id=?", [id]);
+
+    // 🔥 4. students, accounts, logs, subscriptions, modules, divisions
     await conn.query("DELETE FROM students WHERE madrasa_id=?", [id]);
     await conn.query("DELETE FROM accounts WHERE madrasa_id=?", [id]);
     await conn.query("DELETE FROM activity_logs WHERE madrasa_id=?", [id]);
@@ -627,15 +627,31 @@ export const permanentDeleteMadrasa = async (req: Request, res: Response) => {
     ]);
     await conn.query("DELETE FROM madrasa_modules WHERE madrasa_id=?", [id]);
     await conn.query("DELETE FROM madrasa_divisions WHERE madrasa_id=?", [id]);
-    await conn.query("DELETE FROM classes WHERE madrasa_id=?", [id]);
-    await conn.query("DELETE FROM subjects WHERE madrasa_id=?", [id]);
-    await conn.query("DELETE FROM results WHERE madrasa_id=?", [id]);
+
+    // ❗ IMPORTANT FIX HERE
+    // classes / subjects / results এ madrasa_id নাই
+    // তাই এগুলো DELETE করা যাবে না direct ভাবে
+
+    // 👉 instead delete only mapping tables if needed:
+    await conn.query("DELETE FROM madrasa_classes WHERE madrasa_id=?", [id]);
+    await conn.query("DELETE FROM madrasa_books WHERE madrasa_id=?", [id]);
+
+    // 🔥 5. subscriptions related payments (optional but safe)
+    await conn.query(
+      `DELETE FROM payments 
+       WHERE madrasa_id=?`,
+      [id],
+    );
+
+    // 🔥 6. finally madrasa
     await conn.query("DELETE FROM madrasas WHERE id=?", [id]);
 
     await conn.commit();
+
     res.json({ message: "Permanently deleted" });
   } catch (err: any) {
     await conn.rollback();
+    console.error("Permanent delete error:", err);
     res.status(500).json({ message: err.message });
   } finally {
     conn.release();

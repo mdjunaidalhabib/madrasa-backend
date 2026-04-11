@@ -107,8 +107,10 @@ CREATE TABLE IF NOT EXISTS payments (
   FOREIGN KEY (subscription_id) REFERENCES madrasa_subscriptions(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+
+
 -- ========================================================
--- MASTER DIVISIONS
+-- DIVISIONS
 -- ========================================================
 
 CREATE TABLE IF NOT EXISTS divisions (
@@ -125,6 +127,7 @@ INSERT INTO divisions (key_name,name,name_bn) VALUES
 ('takhassus','Takhassus','তাখাসসুস')
 ON DUPLICATE KEY UPDATE name=name;
 
+
 -- ========================================================
 -- MADRASA DIVISIONS
 -- ========================================================
@@ -135,10 +138,13 @@ CREATE TABLE IF NOT EXISTS madrasa_divisions (
   division_id INT NOT NULL,
   is_active TINYINT DEFAULT 1,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
   UNIQUE KEY uniq_madrasa_division (madrasa_id, division_id),
+
   FOREIGN KEY (madrasa_id) REFERENCES madrasas(id) ON DELETE CASCADE,
   FOREIGN KEY (division_id) REFERENCES divisions(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
+
 
 -- ========================================================
 -- CLASSES
@@ -150,7 +156,9 @@ CREATE TABLE IF NOT EXISTS classes (
   name VARCHAR(100),
   name_bn VARCHAR(100),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
   UNIQUE KEY uniq_division_class (division_id,name),
+
   FOREIGN KEY (division_id) REFERENCES divisions(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
@@ -181,7 +189,99 @@ INSERT INTO classes (division_id,name,name_bn) VALUES
 -- Takhassus
 (4,'Ifta','ইফতা'),
 (4,'Hadith','হাদিস')
+
 ON DUPLICATE KEY UPDATE name=name;
+
+
+-- ========================================================
+-- MADRASA CLASSES
+-- ========================================================
+
+CREATE TABLE IF NOT EXISTS madrasa_classes (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  madrasa_id INT NOT NULL,
+  class_id INT NOT NULL,
+  is_active TINYINT DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  UNIQUE KEY uniq_madrasa_class (madrasa_id, class_id),
+
+  FOREIGN KEY (madrasa_id) REFERENCES madrasas(id) ON DELETE CASCADE,
+  FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+
+-- ========================================================
+-- BOOKS
+-- ========================================================
+
+CREATE TABLE IF NOT EXISTS books (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  class_id INT NOT NULL,
+  name VARCHAR(150),
+  name_bn VARCHAR(150),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  UNIQUE KEY uniq_class_book (class_id, name),
+
+  FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+
+-- ========================================================
+-- DEMO BOOKS DATA
+-- ========================================================
+
+INSERT INTO books (class_id,name,name_bn) VALUES
+
+-- Mizan
+(9,'Mizan Book','মিজান কিতাব'),
+(9,'Sarf Book','সরফ'),
+(9,'Nahw Book','নাহু'),
+
+-- Nahbemir
+(10,'Nahbemir','নাহবেমীর'),
+
+-- Hedayatun Nahw
+(11,'Hedayatun Nahw','হেদায়াতুন নাহু'),
+
+-- Kafiya
+(12,'Kafiya','কাফিয়া'),
+
+-- Sharhe Bekaya
+(13,'Sharhe Bekaya','শরহে বেকায়া'),
+
+-- Jalalain
+(14,'Tafsir Jalalain','তাফসির জালালাইন'),
+
+-- Mishkat
+(15,'Mishkat Sharif','মিশকাত শরিফ'),
+
+-- Dawra
+(16,'Sahih Bukhari','সহিহ বুখারি'),
+(16,'Sahih Muslim','সহিহ মুসলিম'),
+(16,'Tirmizi','তিরমিজি'),
+(16,'Abu Dawood','আবু দাউদ')
+
+ON DUPLICATE KEY UPDATE name=name;
+
+
+-- ========================================================
+-- MADRASA BOOKS
+-- ========================================================
+
+CREATE TABLE IF NOT EXISTS madrasa_books (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  madrasa_id INT NOT NULL,
+  book_id INT NOT NULL,
+  is_active TINYINT DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  UNIQUE KEY uniq_madrasa_book (madrasa_id, book_id),
+
+  FOREIGN KEY (madrasa_id) REFERENCES madrasas(id) ON DELETE CASCADE,
+  FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
 
 -- ========================================================
 -- MODULES
@@ -379,149 +479,56 @@ CREATE TABLE IF NOT EXISTS students (
 ) ENGINE=InnoDB;
 
 -- ========================================================
--- TEACHERS
+-- TEACHERS (FINAL FIXED VERSION)
 -- ========================================================
-
 CREATE TABLE IF NOT EXISTS teachers (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  madrasa_id INT,
-  name VARCHAR(200),
+
+  madrasa_id INT NOT NULL,
+  division_id INT NULL,
+
+  name_bn VARCHAR(200) NOT NULL,
+  name_ar VARCHAR(200),
+
+  nid VARCHAR(50),
+  gender ENUM('male','female'),
+
+  dob DATE,
+  age INT,
+
+  father_name VARCHAR(200),
+  father_name_ar VARCHAR(200),
+  father_nid VARCHAR(50),
+  father_occupation VARCHAR(150),
+
+  mother_name VARCHAR(200),
+  mother_nid VARCHAR(50),
+  mother_occupation VARCHAR(150),
+
   phone VARCHAR(50),
-  subject VARCHAR(100),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (madrasa_id) REFERENCES madrasas(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+  email VARCHAR(150),
 
+  designation VARCHAR(150),
+  salary DECIMAL(10,2),
 
--- ========================================================
--- 2. SUBJECTS TABLE
--- ========================================================
+  image VARCHAR(255),
+  joining_date DATE,
 
-CREATE TABLE IF NOT EXISTS subjects (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-
-  madrasa_id INT NOT NULL,
-  class_id INT NOT NULL,
-
-  name VARCHAR(100) NOT NULL,
-
-  teacher_id INT NULL,
+  is_active TINYINT DEFAULT 1,
 
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-  UNIQUE KEY uniq_class_subject (class_id, name),
+  -- ✅ UNIQUE per madrasa
+  UNIQUE KEY uniq_teacher_email (madrasa_id, email),
 
+  -- ✅ indexes for performance
   INDEX idx_madrasa (madrasa_id),
-  INDEX idx_class (class_id),
+  INDEX idx_division (division_id),
 
   FOREIGN KEY (madrasa_id) REFERENCES madrasas(id) ON DELETE CASCADE,
-  FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE,
-  FOREIGN KEY (teacher_id) REFERENCES teachers(id) ON DELETE SET NULL
+  FOREIGN KEY (division_id) REFERENCES divisions(id) ON DELETE SET NULL
+
 ) ENGINE=InnoDB;
-
--- ========================================================
--- 3. TIME SLOTS TABLE (RECOMMENDED)
--- ========================================================
-
-CREATE TABLE IF NOT EXISTS time_slots (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-
-  start_time TIME NOT NULL,
-  end_time TIME NOT NULL,
-
-  UNIQUE KEY uniq_slot (start_time, end_time)
-) ENGINE=InnoDB;
-
--- Default slots (safe insert)
-INSERT INTO time_slots (start_time, end_time) VALUES
-('09:00:00','10:00:00'),
-('10:00:00','11:00:00'),
-('11:00:00','12:00:00'),
-('12:00:00','01:00:00')
-ON DUPLICATE KEY UPDATE start_time=start_time;
-
--- ========================================================
--- 4. ROUTINES TABLE
--- ========================================================
-
-CREATE TABLE IF NOT EXISTS routines (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-
-  madrasa_id INT NOT NULL,
-  class_id INT NOT NULL,
-  subject_id INT NOT NULL,
-
-  slot_id INT NOT NULL,
-
-  day ENUM('sun','mon','tue','wed','thu','fri','sat') NOT NULL,
-
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-  UNIQUE KEY uniq_routine (class_id, day, slot_id),
-
-  INDEX idx_class_day (class_id, day),
-
-  FOREIGN KEY (madrasa_id) REFERENCES madrasas(id) ON DELETE CASCADE,
-  FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE,
-  FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE,
-  FOREIGN KEY (slot_id) REFERENCES time_slots(id) ON DELETE CASCADE
-) ENGINE=InnoDB;
-
--- ========================================================
--- 5. SAMPLE DATA (FOR TEST)
--- ========================================================
-
--- Subjects
-INSERT INTO subjects (madrasa_id, class_id, name)
-VALUES
-(1, 1, 'বাংলা'),
-(1, 1, 'ইংরেজী'),
-(1, 1, 'গণিত'),
-(1, 2, 'বাংলা'),
-(1, 2, 'ইংরেজী'),
-(1, 2, 'গণিত'),
-(1, 3, 'বাংলা'),
-(1, 3, 'ইংরেজী'),
-(1, 3, 'গণিত'),
-(1, 4, 'বাংলা'),
-(1, 4, 'ইংরেজী'),
-(1, 4, 'গণিত'),
-
-(1, 5, 'কোরাআন হিফস'),
-(1, 5, 'মাসাইল'),
-(1, 5, 'তাজবিদ'),
-(1, 6, 'কোরাআন নাজেরা'),
-(1, 6, 'মাসাইল'),
-(1, 6, 'তাজবিদ'),
-
-(1, 7, 'মিযান'),
-
-(1, 8, 'নাহবেমীর'),
-(1, 9, 'হেদাঃ'),
-
-(1, 10, 'উর্দু কায়েদা'),
-(1, 11, 'তালিমুল ইসলাম'),
-
-(1, 12, 'কাফিয়া'),
-(1, 13, 'শরহে বেকায়া'),
-(1, 14, 'জালালাইন'),
-(1, 15, 'মেশকাত'),
-(1, 16, 'দাওরা'),
-(1, 16, 'দাওরা'),
-
-(1, 17, 'হাদিস'),
-(1, 18, 'মাসাআলা')
-
-ON DUPLICATE KEY UPDATE name=name;
-
--- Routine (using slot_id)
-INSERT INTO routines (madrasa_id, class_id, subject_id, slot_id, day)
-VALUES
-(1, 5, 1, 1, 'sun'),
-(1, 5, 2, 2, 'sun')
-ON DUPLICATE KEY UPDATE day=day;
-
-SET FOREIGN_KEY_CHECKS = 1;
 
 -- ========================================================
 -- ACCOUNTS

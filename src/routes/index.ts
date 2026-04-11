@@ -21,10 +21,7 @@ import accountRoutes from "../modules/accounts/account.routes";
 import talimatRoutes from "../modules/talimat/talimat.routes";
 
 // 🏫 Academic Structure
-import divisionRoutes from "../modules/divisionRoutes";
-import classRoutes from "../modules/classRoutes";
-import subjectRoutes from "../modules/subject.routes";
-
+import classPanalRoutes from "../modules/classPanal/classPanal.routes";
 
 // 👑 Super Admin
 import superadminRoutes from "../modules/superadmin/superadmin.routes";
@@ -80,14 +77,6 @@ router.use("/talimat", talimatRoutes);
 /* =========================
    ACADEMIC STRUCTURE
 ========================= */
-
-// Division (Nurani, Hifz, Kitab, Taqassus)
-router.use("/divisions", divisionRoutes);
-
-// Classes under division
-router.use("/classes", classRoutes);
-
-// Academic modules
-router.use("/subjects", subjectRoutes);
+router.use("/", classPanalRoutes);
 
 export default router;

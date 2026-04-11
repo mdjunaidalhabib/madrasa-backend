@@ -1,207 +1,182 @@
 import { Request, Response } from "express";
 import { db } from "../../config/db";
 
-/* =============================
-   GET ALL STUDENTS
-============================= */
+/* =========================================================
+   GET ALL STUDENTS (WITH CLASS NAME - FIXED)
+========================================================= */
 export const getStudents = async (req: Request, res: Response) => {
   try {
-    const madrasaId = 1;
+    const madrasaId = req.tenant?.madrasa_id;
+
+    if (!madrasaId) {
+      return res.status(400).json({
+        success: false,
+        message: "Tenant madrasa not found",
+      });
+    }
 
     const sql = `
       SELECT 
-        id,
-        name_bn,
-        father_name,
-        guardian_phone,
+        students.id,
+        students.name_bn,
+        students.father_name,
+        students.guardian_phone,
 
-        division_id,
-        class_id,
-        previous_class_id
+        students.division_id,
+        students.class_id,
+        students.previous_class_id,
+
+        classes.name_bn AS current_class
 
       FROM students
-      WHERE madrasa_id = ?
-      ORDER BY id DESC
+
+      LEFT JOIN classes 
+        ON students.class_id = classes.id
+
+      WHERE students.madrasa_id = ?
+
+      ORDER BY students.id DESC
     `;
 
     const [rows]: any = await db.query(sql, [madrasaId]);
 
-    res.json({
+    return res.json({
       success: true,
       data: rows,
     });
   } catch (error: any) {
-    res.status(500).json({
+    console.error("GET STUDENTS ERROR:", error);
+
+    return res.status(500).json({
       success: false,
       message: error.message,
     });
   }
 };
 
-/* =============================
+/* =========================================================
    GET SINGLE STUDENT
-============================= */
+========================================================= */
 export const getStudentById = async (req: Request, res: Response) => {
   try {
+    const madrasaId = req.tenant?.madrasa_id;
     const { id } = req.params;
 
     const sql = `
       SELECT 
-        id,
-        name_bn,
-        name_ar,
-        nid,
-        gender,
-        dob,
-        age,
-
-        division_id,
-        class_id,
-        previous_class_id,
-
-        father_name,
-        father_name_ar,
-        father_nid,
-        father_occupation,
-
-        mother_name,
-        mother_nid,
-        mother_occupation,
-
-        guardian_phone,
-
-        division,
-        district,
-        thana,
-        village,
-
-        image,
-        roll
-
+        students.*,
+        classes.name_bn AS current_class
       FROM students
-      WHERE id = ?
+      LEFT JOIN classes 
+        ON students.class_id = classes.id
+      WHERE students.id = ? AND students.madrasa_id = ?
     `;
 
-    const [rows]: any = await db.query(sql, [id]);
+    const [rows]: any = await db.query(sql, [id, madrasaId]);
 
-    res.json({
+    if (!rows.length) {
+      return res.status(404).json({
+        success: false,
+        message: "Student not found",
+      });
+    }
+
+    return res.json({
       success: true,
       data: rows[0],
     });
   } catch (error: any) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: error.message,
     });
   }
 };
 
-/* =============================
+/* =========================================================
    UPDATE STUDENT
-============================= */
+========================================================= */
 export const updateStudent = async (req: Request, res: Response) => {
   try {
+    const madrasaId = req.tenant?.madrasa_id;
     const { id } = req.params;
 
+    if (!madrasaId) {
+      return res.status(400).json({
+        success: false,
+        message: "Tenant madrasa not found",
+      });
+    }
+
+    /* =============================
+       REMOVE UNDEFINED FIELDS
+    ============================= */
+    const filteredBody: any = {};
+
+    Object.keys(req.body).forEach((key) => {
+      if (req.body[key] !== undefined) {
+        filteredBody[key] = req.body[key];
+      }
+    });
+
+    const fields = Object.keys(filteredBody);
+
+    if (!fields.length) {
+      return res.status(400).json({
+        success: false,
+        message: "No data to update",
+      });
+    }
+
+    /* =============================
+       BUILD DYNAMIC QUERY
+    ============================= */
+    const setClause = fields.map((field) => `${field} = ?`).join(", ");
+    const values = fields.map((field) => filteredBody[field]);
+
     const sql = `
-      UPDATE students SET
-
-      name_bn=?,
-      name_ar=?,
-      nid=?,
-      gender=?,
-      dob=?,
-      age=?,
-
-      division_id=?,
-      class_id=?,
-      previous_class_id=?,
-
-      father_name=?,
-      father_name_ar=?,
-      father_nid=?,
-      father_occupation=?,
-
-      mother_name=?,
-      mother_nid=?,
-      mother_occupation=?,
-
-      guardian_phone=?,
-
-      division=?,
-      district=?,
-      thana=?,
-      village=?,
-
-      image=?,
-      roll=?
-
-      WHERE id=?
+      UPDATE students
+      SET ${setClause}
+      WHERE id = ? AND madrasa_id = ?
     `;
 
-    const values = [
-      req.body.name_bn,
-      req.body.name_ar,
-      req.body.nid,
-      req.body.gender,
-      req.body.dob,
-      req.body.age,
+    const [result]: any = await db.query(sql, [...values, id, madrasaId]);
 
-      req.body.division_id,
-      req.body.class_id,
-      req.body.previous_class_id,
-
-      req.body.father_name,
-      req.body.father_name_ar,
-      req.body.father_nid,
-      req.body.father_occupation,
-
-      req.body.mother_name,
-      req.body.mother_nid,
-      req.body.mother_occupation,
-
-      req.body.guardian_phone,
-
-      req.body.division,
-      req.body.district,
-      req.body.thana,
-      req.body.village,
-
-      req.body.image,
-      req.body.roll,
-
-      id,
-    ];
-
-    await db.query(sql, values);
-
-    res.json({
+    return res.json({
       success: true,
-      message: "Student Updated",
+      message: "Student Updated Successfully",
+      affectedRows: result.affectedRows,
     });
   } catch (error: any) {
-    res.status(500).json({
+    console.error("UPDATE STUDENT ERROR:", error);
+
+    return res.status(500).json({
       success: false,
       message: error.message,
     });
   }
 };
 
-/* =============================
+/* =========================================================
    DELETE STUDENT
-============================= */
+========================================================= */
 export const deleteStudent = async (req: Request, res: Response) => {
   try {
+    const madrasaId = req.tenant?.madrasa_id;
     const { id } = req.params;
 
-    await db.query("DELETE FROM students WHERE id = ?", [id]);
+    const [result]: any = await db.query(
+      "DELETE FROM students WHERE id = ? AND madrasa_id = ?",
+      [id, madrasaId],
+    );
 
-    res.json({
+    return res.json({
       success: true,
       message: "Student Deleted",
+      affectedRows: result.affectedRows,
     });
   } catch (error: any) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: error.message,
     });

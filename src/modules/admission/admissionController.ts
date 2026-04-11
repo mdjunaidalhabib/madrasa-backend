@@ -3,111 +3,74 @@ import { db } from "../../config/db";
 
 export const createAdmission = async (req: Request, res: Response) => {
   try {
-    const {
-      name,
-      arabicName,
-      nid,
-      gender,
-      dob,
-      age,
+    const body = req.body;
 
-      academicDivision,
-      previousClass,
-      currentClass,
+    // 🔥 MADRASA ID FROM TENANT (SUBDOMAIN)
+    const madrasaId = req.tenant?.madrasa_id;
 
-      fatherName,
-      fatherArabicName,
-      fatherNid,
-      fatherOccupation,
+    if (!madrasaId) {
+      return res.status(400).json({
+        success: false,
+        message: "Tenant madrasa not found",
+      });
+    }
 
-      motherName,
-      motherNid,
-      motherOccupation,
+    // =========================
+    // VALIDATION
+    // =========================
+    if (!body.name || !body.nid || !body.division_id || !body.class_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Required fields missing",
+      });
+    }
 
-      parentPhone,
+    // =========================
+    // CLEAN PAYLOAD
+    // =========================
+    const payload = {
+      madrasa_id: madrasaId,
 
-      division,
-      district,
-      thana,
-      village,
+      division_id: Number(body.division_id),
+      class_id: Number(body.class_id),
+      previous_class_id: body.previous_class_id
+        ? Number(body.previous_class_id)
+        : null,
 
-      image,
-    } = req.body;
+      name_bn: body.name || null,
+      name_ar: body.arabicName || null,
+      nid: body.nid || null,
+      gender: body.gender || null,
+      dob: body.dob || null,
+      age: body.age ? Number(body.age) : null,
 
-    const madrasaId = 1;
+      father_name: body.fatherName || null,
+      father_name_ar: body.fatherArabicName || null,
+      father_nid: body.fatherNid || null,
+      father_occupation: body.fatherOccupation || null,
 
-    const sql = `
-      INSERT INTO students
-      (
-        madrasa_id,
-        division_id,
-        class_id,
-        previous_class_id,
+      mother_name: body.motherName || null,
+      mother_nid: body.motherNid || null,
+      mother_occupation: body.motherOccupation || null,
 
-        name_bn,
-        name_ar,
-        nid,
-        gender,
-        dob,
-        age,
+      guardian_phone: body.parentPhone || null,
 
-        father_name,
-        father_name_ar,
-        father_nid,
-        father_occupation,
+      division: body.division || null,
+      district: body.district || null,
+      thana: body.thana || null,
+      village: body.village || null,
 
-        mother_name,
-        mother_nid,
-        mother_occupation,
+      image: body.image || null,
 
-        guardian_phone,
+      admission_date: new Date(),
+    };
 
-        division,
-        district,
-        thana,
-        village,
+    // =========================
+    // DB INSERT
+    // =========================
+    const [result]: any = await db.query("INSERT INTO students SET ?", payload);
 
-        image,
-        admission_date
-      )
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURDATE())
-    `;
-
-    const values = [
-      madrasaId,
-      academicDivision,
-      currentClass,
-      previousClass,
-
-      name,
-      arabicName,
-      nid,
-      gender,
-      dob,
-      age,
-
-      fatherName,
-      fatherArabicName,
-      fatherNid,
-      fatherOccupation,
-
-      motherName,
-      motherNid,
-      motherOccupation,
-
-      parentPhone,
-
-      division,
-      district,
-      thana,
-      village,
-
-      image || null,
-    ];
-
-    const [result]: any = await db.query(sql, values);
-
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: "Student admitted successfully",
       studentId: result.insertId,
@@ -115,7 +78,7 @@ export const createAdmission = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error("ADMISSION ERROR:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Admission failed",
       error: error.message,

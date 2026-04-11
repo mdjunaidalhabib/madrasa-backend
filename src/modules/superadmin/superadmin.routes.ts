@@ -36,7 +36,12 @@ import {
 /* =========================
    Meta handlers
 ========================= */
-import { listDivisions, listModules } from "./meta.controller";
+import {
+  listDivisions,
+  listClasses,
+  listBooks,
+  listModules,
+} from "./meta.controller";
 
 const router = Router();
 
@@ -45,17 +50,11 @@ const router = Router();
 ===================================================== */
 
 router.get("/madrasas", superAdminMiddleware, listMadrasas);
-
 router.post("/madrasas", superAdminMiddleware, createMadrasa);
-
 router.post("/madrasas/:id/activate", superAdminMiddleware, activateMadrasa);
-
 router.post("/madrasas/:id/suspend", superAdminMiddleware, suspendMadrasa);
-
 router.delete("/madrasas/:id", superAdminMiddleware, trashMadrasa);
-
 router.get("/madrasas/trash", superAdminMiddleware, listTrash);
-
 router.post("/madrasas/:id/restore", superAdminMiddleware, restoreMadrasa);
 
 router.delete(
@@ -132,6 +131,8 @@ router.get("/dashboard-stats", superAdminMiddleware, getSuperAdminStats);
 ===================================================== */
 
 router.get("/divisions", superAdminMiddleware, listDivisions);
+router.get("/classes", superAdminMiddleware, listClasses);
+router.get("/books", superAdminMiddleware, listBooks);
 
 router.get("/modules", superAdminMiddleware, listModules);
 
