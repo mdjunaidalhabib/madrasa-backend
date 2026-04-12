@@ -16,6 +16,9 @@ import sidebarRoutes from "../modules/sidebar/sidebar.routes";
 import studentRoutes from "../modules/students/student.routes";
 import admissionRoutes from "../modules/admission/admissionRoutes";
 
+// 👨‍🎓 teacher Admission
+import teacherRoutes from "../modules/teacher/teacherRoutes";
+
 // 💰 Accounts & Talimat
 import accountRoutes from "../modules/accounts/account.routes";
 import talimatRoutes from "../modules/talimat/talimat.routes";
@@ -66,6 +69,11 @@ router.use("/activity", activityRoutes);
 
 router.use("/students", studentRoutes);
 router.use("/students/admission", admissionRoutes);
+/* =========================
+   TEACHER MODULE
+========================= */
+router.use("/teachers", teacherRoutes);
+
 
 /* =========================
    FINANCE & TALIMAT

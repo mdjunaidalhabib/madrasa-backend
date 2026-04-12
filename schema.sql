@@ -326,6 +326,10 @@ CREATE TABLE IF NOT EXISTS module_features (
 INSERT INTO module_features (module_id,key_name,name,name_bn,sort_order) VALUES
 
 -- Talimat
+(2,'teacher_admission','Teacher Admission','নতুন শিক্ষক',1),
+(2,'all_teacher','All Teachers','শিক্ষকসমূহ',2),
+
+-- Talimat
 (3,'class_panel','Class Panel','ক্লাস প্যানেল',1),
 (3,'results','Results','রেজাল্ট',2),
 (3,'id_card','ID Card','আইডি কার্ড',3),
@@ -432,51 +436,71 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS students (
   id INT AUTO_INCREMENT PRIMARY KEY,
 
-  madrasa_id INT,
-  division_id INT,
-  class_id INT,
-  previous_class_id INT,
+  madrasa_id INT NOT NULL,
 
-  name_bn VARCHAR(200),
-  name_ar VARCHAR(200),
+  division_id INT NULL,
+  class_id INT NOT NULL,
+  previous_class_id INT NULL,
 
-  nid VARCHAR(50),
-  gender ENUM('male','female'),
+  name_bn VARCHAR(200) NOT NULL,
+  arabic_name VARCHAR(200) NULL,
 
-  dob DATE,
-  age INT,
+  nid VARCHAR(50) NULL,
+  gender ENUM('Male','Female') NOT NULL,
 
-  father_name VARCHAR(200),
-  father_name_ar VARCHAR(200),
-  father_nid VARCHAR(50),
-  father_occupation VARCHAR(150),
+  dob DATE NOT NULL,
+  age INT NULL,
 
-  mother_name VARCHAR(200),
-  mother_nid VARCHAR(50),
-  mother_occupation VARCHAR(150),
+  father_name VARCHAR(200) NULL,
+  father_arabic_name VARCHAR(200) NULL,
+  father_nid VARCHAR(50) NULL,
+  father_occupation VARCHAR(150) NULL,
 
-  guardian_phone VARCHAR(50),
+  mother_name VARCHAR(200) NULL,
+  mother_nid VARCHAR(50) NULL,
+  mother_occupation VARCHAR(150) NULL,
 
-  division VARCHAR(100),
-  district VARCHAR(100),
-  thana VARCHAR(100),
-  village VARCHAR(150),
+  guardian_phone VARCHAR(20) NOT NULL,
 
-  image VARCHAR(255),
+  -- 🔥 NEW ADDRESS FIELDS
+  division VARCHAR(100) NULL,
+  district VARCHAR(100) NULL,
+  thana VARCHAR(100) NULL,
+  village VARCHAR(150) NULL,
 
-  roll INT,
-  admission_date DATE,
+  image LONGTEXT NULL,
 
-  is_active TINYINT DEFAULT 1,
+  roll INT NULL,
+
+  admission_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
 
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
-  FOREIGN KEY (madrasa_id) REFERENCES madrasas(id) ON DELETE CASCADE,
-  FOREIGN KEY (division_id) REFERENCES divisions(id),
-  FOREIGN KEY (class_id) REFERENCES classes(id),
-  FOREIGN KEY (previous_class_id) REFERENCES classes(id)
+  INDEX idx_madrasa (madrasa_id),
+  INDEX idx_class (class_id),
+  INDEX idx_phone (guardian_phone),
 
+  UNIQUE KEY unique_roll_per_madrasa (madrasa_id, roll),
+
+  CONSTRAINT fk_students_madrasa
+    FOREIGN KEY (madrasa_id) REFERENCES madrasas(id)
+    ON DELETE CASCADE,
+
+  CONSTRAINT fk_students_division
+    FOREIGN KEY (division_id) REFERENCES divisions(id)
+    ON DELETE SET NULL,
+
+  CONSTRAINT fk_students_class
+    FOREIGN KEY (class_id) REFERENCES classes(id)
+    ON DELETE RESTRICT,
+
+  CONSTRAINT fk_students_previous_class
+    FOREIGN KEY (previous_class_id) REFERENCES classes(id)
+    ON DELETE SET NULL
 ) ENGINE=InnoDB;
+
 
 -- ========================================================
 -- TEACHERS (FINAL FIXED VERSION)
@@ -496,6 +520,23 @@ CREATE TABLE IF NOT EXISTS teachers (
   dob DATE,
   age INT,
 
+  phone VARCHAR(50),
+  email VARCHAR(150),
+
+  designation VARCHAR(150),
+  department VARCHAR(150),
+  qualification VARCHAR(200),
+
+  experience_year INT DEFAULT 0,
+  experience_month INT DEFAULT 0,
+
+  experience_total_months INT GENERATED ALWAYS AS (
+    (IFNULL(experience_year,0) * 12) + IFNULL(experience_month,0)
+  ) STORED,
+
+  joining_date DATE,
+  salary DECIMAL(10,2),
+
   father_name VARCHAR(200),
   father_name_ar VARCHAR(200),
   father_nid VARCHAR(50),
@@ -505,31 +546,32 @@ CREATE TABLE IF NOT EXISTS teachers (
   mother_nid VARCHAR(50),
   mother_occupation VARCHAR(150),
 
-  phone VARCHAR(50),
-  email VARCHAR(150),
+  parent_phone VARCHAR(50),
 
-  designation VARCHAR(150),
-  salary DECIMAL(10,2),
+  division VARCHAR(100),
+  district VARCHAR(100),
+  thana VARCHAR(100),
+  village VARCHAR(150),
 
-  image VARCHAR(255),
-  joining_date DATE,
+  image TEXT,
 
   is_active TINYINT DEFAULT 1,
 
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
-  -- ✅ UNIQUE per madrasa
   UNIQUE KEY uniq_teacher_email (madrasa_id, email),
+  UNIQUE KEY uniq_teacher_phone (madrasa_id, phone),
 
-  -- ✅ indexes for performance
   INDEX idx_madrasa (madrasa_id),
-  INDEX idx_division (division_id),
+  INDEX idx_division_id (division_id),
+  INDEX idx_phone (phone),
+  INDEX idx_experience_total (experience_total_months),
+  INDEX idx_joining_date (joining_date),
 
   FOREIGN KEY (madrasa_id) REFERENCES madrasas(id) ON DELETE CASCADE,
   FOREIGN KEY (division_id) REFERENCES divisions(id) ON DELETE SET NULL
-
 ) ENGINE=InnoDB;
-
 -- ========================================================
 -- ACCOUNTS
 -- ========================================================
