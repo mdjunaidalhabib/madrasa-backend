@@ -171,8 +171,8 @@ INSERT INTO classes (division_id,name,name_bn) VALUES
 (1,'Third','তৃতীয়'),
 
 -- Nazera/Hifz
-(2,'Hifz','হিফজ'),
 (2,'Nazera','নাযেরা'),
+(2,'Hifz','হিফজ'),
 
 -- Kitab
 (3,'Urdu','উর্দু'),
@@ -233,6 +233,49 @@ CREATE TABLE IF NOT EXISTS books (
 -- ========================================================
 
 INSERT INTO books (class_id,name,name_bn) VALUES
+
+-- class play
+(1,'bangla book','বাংলা শিশু'),
+(1,'english book','ইংরেজি শিশু'),
+(1,'gonit book','গণিত শিশু'),
+
+-- class one
+(2,'bangla book','বাংলা প্রথম'),
+(2,'english book','ইংরেজি প্রথম'),
+(2,'gonit book','গণিত প্রথম'),
+
+
+-- class two
+(3,'bangla book','বাংলা ২য়'),
+(3,'english book','ইংরেজি ২য়'),
+(3,'gonit book','গণিত ২য়'),
+
+-- class three
+(4,'bangla book','বাংলা ৩য়'),
+(4,'english book','ইংরেজি ৩য়'),
+(4,'gonit book','গণিত ৩য়'),
+
+-- nazera
+(5,'Nazera','নাযেরা'),
+(5,'tazbid','তাজবিদ'),
+(5,'masala','মাসআলা'),
+
+-- hifs 
+(6,'Hifz Book','হিফজ কিতাব'),
+(6,'tazbid Book','তাজবিদ কিতাব'),
+(6,'masala Book','মাসআলা কিতাব'),
+
+
+(7,'Urdu Book','উর্দু কিতাব'),
+
+-- urdu
+(7,'Urdu Book','উর্দু কিতাব'),
+
+-- urdu
+(7,'Urdu Book','উর্দু কিতাব'),
+
+-- taisir
+(8,'Taisir Book','তাইসির কিতাব'),
 
 -- Mizan
 (9,'Mizan Book','মিজান কিতাব'),
