@@ -18,6 +18,7 @@ import admissionRoutes from "../modules/admission/admissionRoutes";
 
 // 👨‍🎓 teacher Admission
 import teacherRoutes from "../modules/teacher/teacherRoutes";
+import teacherAssignmentRoutes from "../modules/TeacherAssignment/TeacherAssignmentRoutes";
 
 // 💰 Accounts & Talimat
 import accountRoutes from "../modules/accounts/account.routes";
@@ -29,6 +30,7 @@ import classPanalRoutes from "../modules/classPanal/classPanal.routes";
 // 👑 Super Admin
 import superadminRoutes from "../modules/superadmin/superadmin.routes";
 import superAdminAuthRoutes from "../modules/superadmin/superadmin.auth.routes";
+import examRoutes from "../modules/ExamPanel/exam.routes";
 
 const router = Router();
 
@@ -73,14 +75,14 @@ router.use("/students/admission", admissionRoutes);
    TEACHER MODULE
 ========================= */
 router.use("/teachers", teacherRoutes);
-
-
+router.use("/teacher-assignments", teacherAssignmentRoutes);
 /* =========================
    FINANCE & TALIMAT
 ========================= */
 
 router.use("/accounts", accountRoutes);
 router.use("/talimat", talimatRoutes);
+router.use("/", examRoutes);
 
 /* =========================
    ACADEMIC STRUCTURE

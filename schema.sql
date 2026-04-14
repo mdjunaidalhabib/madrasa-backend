@@ -374,11 +374,13 @@ INSERT INTO module_features (module_id,key_name,name,name_bn,sort_order) VALUES
 
 -- Talimat
 (3,'class_panel','Class Panel','ক্লাস প্যানেল',1),
-(3,'results','Results','রেজাল্ট',2),
-(3,'id_card','ID Card','আইডি কার্ড',3),
-(3,'admit_card','Admit Card','প্রবেশ পত্র',4),
-(3,'certificate','Certificate','প্রত্যয়ন পত্র',5),
-(3,'transfer_letter','Transfer Letter','ছাড় পত্র',6),
+(3,'teacher_assignment','Teacher Assignment','কিতাব বন্টন',2), 
+(3,'exam_panel','Exam Panel','পরিক্ষা প্যানেল',3), 
+(3,'results','Results','রেজাল্ট',4),
+(3,'id_card','ID Card','আইডি কার্ড',5),
+(3,'admit_card','Admit Card','প্রবেশ পত্র',6),
+(3,'certificate','Certificate','প্রত্যয়ন পত্র',7),
+(3,'transfer_letter','Transfer Letter','ছাড় পত্র',8),
 
 -- Accounts
 (4,'income','Income','আয়/রশিদ জমা',1),
@@ -615,6 +617,42 @@ CREATE TABLE IF NOT EXISTS teachers (
   FOREIGN KEY (madrasa_id) REFERENCES madrasas(id) ON DELETE CASCADE,
   FOREIGN KEY (division_id) REFERENCES divisions(id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
+
+
+CREATE TABLE IF NOT EXISTS teacher_assignments (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+
+  teacher_id INT NOT NULL,
+  class_id INT NOT NULL,
+  book_id INT NOT NULL,
+
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  -- prevent duplicate assignment
+  UNIQUE KEY unique_assignment (teacher_id, class_id, book_id),
+
+  -- indexes (🔥 performance boost)
+  INDEX idx_teacher (teacher_id),
+  INDEX idx_class (class_id),
+  INDEX idx_book (book_id),
+
+  -- foreign keys
+  CONSTRAINT fk_teacher
+    FOREIGN KEY (teacher_id)
+    REFERENCES teachers(id)
+    ON DELETE CASCADE,
+
+  CONSTRAINT fk_class
+    FOREIGN KEY (class_id)
+    REFERENCES madrasa_classes(class_id)
+    ON DELETE CASCADE,
+
+  CONSTRAINT fk_book
+    FOREIGN KEY (book_id)
+    REFERENCES madrasa_books(book_id)
+    ON DELETE CASCADE
+);
+
 -- ========================================================
 -- ACCOUNTS
 -- ========================================================
@@ -630,6 +668,112 @@ CREATE TABLE IF NOT EXISTS accounts (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (madrasa_id) REFERENCES madrasas(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
+
+
+/* =========================
+   EXAMS TABLE
+========================= */
+CREATE TABLE IF NOT EXISTS exams (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100),
+  year VARCHAR(20),
+
+  school_id INT,
+  created_by INT,
+
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+/* =========================
+   EXAMS DEMO DATA
+========================= */
+INSERT INTO exams (name, year) VALUES
+('Mid Term Exam', '2024'),
+('Final Exam', '2024'),
+('Half Yearly Exam', '2025'),
+('Annual Exam', '2025'),
+('Test Exam', '2025');
+
+/* =========================
+   GENERAL GRADES TABLE
+========================= */
+CREATE TABLE IF NOT EXISTS general_grades (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(10),
+  min_mark INT,
+  max_mark INT,
+
+  school_id INT,
+  created_by INT,
+
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+/* =========================
+   GENERAL GRADES DEMO DATA
+========================= */
+INSERT INTO general_grades (name, min_mark, max_mark) VALUES
+('A+', 80, 100),
+('A', 70, 79),
+('A-', 60, 69),
+('B', 50, 59),
+('C', 40, 49),
+('D', 33, 39),
+('F', 0, 32);
+
+
+/* =========================
+   MADRASA GRADES TABLE
+========================= */
+CREATE TABLE IF NOT EXISTS madrasa_grades (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(50),
+  min_mark INT,
+  max_mark INT,
+
+  school_id INT,
+  created_by INT,
+
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+/* =========================
+   MADRASA GRADES DEMO DATA
+========================= */
+INSERT INTO madrasa_grades (name, min_mark, max_mark) VALUES
+('Mumtaz', 80, 100),
+('Jayyid Jiddan', 70, 79),
+('Jayyid', 60, 69),
+('Maqbul', 50, 59),
+('Mutawassit', 40, 49),
+('Zaif', 33, 39),
+('Rasib', 0, 32);
+
+/* =========================
+   SETTINGS TABLE
+========================= */
+CREATE TABLE IF NOT EXISTS settings (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  key_name VARCHAR(50) UNIQUE,
+  value VARCHAR(50),
+
+  school_id INT,
+  created_by INT,
+
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+
+/* =========================
+   DEFAULT FAIL MARK
+========================= */
+INSERT INTO settings (key_name, value)
+VALUES ('fail_mark', '35')
+ON DUPLICATE KEY UPDATE value = VALUES(value);
 
 -- ========================================================
 -- ACTIVITY LOGS
