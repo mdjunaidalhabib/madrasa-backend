@@ -31,6 +31,7 @@ import classPanalRoutes from "../modules/classPanal/classPanal.routes";
 import superadminRoutes from "../modules/superadmin/superadmin.routes";
 import superAdminAuthRoutes from "../modules/superadmin/superadmin.auth.routes";
 import examRoutes from "../modules/ExamPanel/exam.routes";
+import resultsRoutes from "../modules/ResultPanel/resultRoutes";
 
 const router = Router();
 
@@ -83,6 +84,8 @@ router.use("/teacher-assignments", teacherAssignmentRoutes);
 router.use("/accounts", accountRoutes);
 router.use("/talimat", talimatRoutes);
 router.use("/", examRoutes);
+router.use("/results", resultsRoutes);
+
 
 /* =========================
    ACADEMIC STRUCTURE

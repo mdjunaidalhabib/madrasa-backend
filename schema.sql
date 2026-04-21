@@ -675,14 +675,16 @@ CREATE TABLE IF NOT EXISTS accounts (
 ========================= */
 CREATE TABLE IF NOT EXISTS exams (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(100),
-  year VARCHAR(20),
+  name VARCHAR(100) NOT NULL,
+  year VARCHAR(20) NOT NULL,
 
-  school_id INT,
-  created_by INT,
+  school_id INT NOT NULL DEFAULT 1,
+  created_by INT NULL,
 
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+  UNIQUE KEY uniq_exam_school (school_id, name, year)
 );
 
 /* =========================
@@ -693,22 +695,26 @@ INSERT INTO exams (name, year) VALUES
 ('Final Exam', '2024'),
 ('Half Yearly Exam', '2025'),
 ('Annual Exam', '2025'),
-('Test Exam', '2025');
+('Test Exam', '2025')
+ON DUPLICATE KEY UPDATE name=name;
+
 
 /* =========================
    GENERAL GRADES TABLE
 ========================= */
 CREATE TABLE IF NOT EXISTS general_grades (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(10),
-  min_mark INT,
-  max_mark INT,
+  name VARCHAR(10) NOT NULL,
+  min_mark INT NOT NULL,
+  max_mark INT NOT NULL,
 
-  school_id INT,
-  created_by INT,
+  school_id INT NOT NULL DEFAULT 1,
+  created_by INT NULL,
 
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+  UNIQUE KEY uniq_general_grade_school (school_id, name)
 );
 
 /* =========================
@@ -721,7 +727,8 @@ INSERT INTO general_grades (name, min_mark, max_mark) VALUES
 ('B', 50, 59),
 ('C', 40, 49),
 ('D', 33, 39),
-('F', 0, 32);
+('F', 0, 32)
+ON DUPLICATE KEY UPDATE name=name;
 
 
 /* =========================
@@ -729,15 +736,17 @@ INSERT INTO general_grades (name, min_mark, max_mark) VALUES
 ========================= */
 CREATE TABLE IF NOT EXISTS madrasa_grades (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(50),
-  min_mark INT,
-  max_mark INT,
+  name VARCHAR(50) NOT NULL,
+  min_mark INT NOT NULL,
+  max_mark INT NOT NULL,
 
-  school_id INT,
-  created_by INT,
+  school_id INT NOT NULL DEFAULT 1,
+  created_by INT NULL,
 
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+  UNIQUE KEY uniq_madrasa_grade_school (school_id, name)
 );
 
 /* =========================
@@ -750,32 +759,125 @@ INSERT INTO madrasa_grades (name, min_mark, max_mark) VALUES
 ('Maqbul', 50, 59),
 ('Mutawassit', 40, 49),
 ('Zaif', 33, 39),
-('Rasib', 0, 32);
+('Rasib', 0, 32)
+ON DUPLICATE KEY UPDATE name=name;
+
 
 /* =========================
    SETTINGS TABLE
 ========================= */
 CREATE TABLE IF NOT EXISTS settings (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  key_name VARCHAR(50) UNIQUE,
+  name VARCHAR(50) NOT NULL UNIQUE,
   value VARCHAR(50),
 
-  school_id INT,
-  created_by INT,
+  school_id INT NOT NULL DEFAULT 1,
+  created_by INT NULL,
 
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
+INSERT INTO settings (name, value, school_id)
+VALUES ('fail_mark', '35', 1)
+ON DUPLICATE KEY UPDATE value=value;
 
-/* =========================
-   DEFAULT FAIL MARK
-========================= */
-INSERT INTO settings (key_name, value)
-VALUES ('fail_mark', '35')
-ON DUPLICATE KEY UPDATE value = VALUES(value);
 
--- ========================================================
+/* =========================================================
+   RESULTS MASTER
+========================================================= */
+CREATE TABLE IF NOT EXISTS results_master (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+
+  school_id INT NOT NULL,
+  exam_id INT NOT NULL,
+  class_id INT NOT NULL,
+  created_by INT NULL,
+
+  status ENUM('DRAFT','PUBLISHED') NOT NULL DEFAULT 'DRAFT',
+
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  UNIQUE KEY uniq_session (school_id, exam_id, class_id),
+
+  INDEX idx_school (school_id),
+  INDEX idx_exam_class (exam_id, class_id),
+  INDEX idx_school_exam_class (school_id, exam_id, class_id),
+  INDEX idx_status (status)
+);
+
+
+/* =========================================================
+   RESULTS SUMMARY
+========================================================= */
+CREATE TABLE IF NOT EXISTS results_summary (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+
+  result_master_id INT NOT NULL,
+  student_id INT NOT NULL,
+
+  total FLOAT NOT NULL DEFAULT 0,
+  average FLOAT NOT NULL DEFAULT 0,
+
+  general_grade VARCHAR(20) DEFAULT NULL,
+  madrasa_grade VARCHAR(50) DEFAULT NULL,
+
+  status VARCHAR(10) DEFAULT NULL,
+  rank_no INT DEFAULT NULL,
+
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  UNIQUE KEY uniq_result (result_master_id, student_id),
+
+  INDEX idx_result_master (result_master_id),
+  INDEX idx_student (student_id),
+  INDEX idx_rank (rank_no),
+  INDEX idx_result_rank (result_master_id, rank_no)
+);
+
+/* =========================================================
+   MARKS
+========================================================= */
+CREATE TABLE IF NOT EXISTS marks (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+
+  result_master_id INT NOT NULL,
+  student_id INT NOT NULL,
+  exam_id INT NOT NULL,
+  class_id INT NOT NULL,
+  book_id INT NOT NULL,
+
+  mark FLOAT NOT NULL DEFAULT 0,
+
+  school_id INT NOT NULL DEFAULT 1,
+
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+  UNIQUE KEY uniq_mark (
+    result_master_id,
+    student_id,
+    class_id,
+    book_id
+  ),
+
+  INDEX idx_master (result_master_id),
+  INDEX idx_student (student_id),
+  INDEX idx_exam (exam_id),
+  INDEX idx_class (class_id),
+  INDEX idx_book (book_id),
+  INDEX idx_school (school_id),
+  INDEX idx_master_student (result_master_id, student_id),
+  INDEX idx_master_book (result_master_id, book_id),
+  INDEX idx_school_exam_class (school_id, exam_id, class_id)
+
+  /* Optional FK
+  ,CONSTRAINT fk_marks_master
+    FOREIGN KEY (result_master_id) REFERENCES results_master(id)
+    ON DELETE CASCADE
+  */
+);
+
 -- ACTIVITY LOGS
 -- ========================================================
 

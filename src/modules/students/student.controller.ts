@@ -20,6 +20,9 @@ export const getStudents = async (req: Request, res: Response) => {
   try {
     const madrasaId = req.tenant?.madrasa_id;
 
+    const classId = req.query.class_id;
+    const divisionId = req.query.division_id;
+
     if (!madrasaId) {
       return res.status(400).json({
         success: false,
@@ -27,7 +30,7 @@ export const getStudents = async (req: Request, res: Response) => {
       });
     }
 
-    const sql = `
+    let sql = `
       SELECT 
         s.id,
         s.name_bn,
@@ -40,10 +43,25 @@ export const getStudents = async (req: Request, res: Response) => {
       FROM students s
       LEFT JOIN classes c ON s.class_id = c.id
       WHERE s.madrasa_id = ?
-      ORDER BY s.id DESC
     `;
 
-    const [rows]: any = await db.query(sql, [madrasaId]);
+    const params: any[] = [madrasaId];
+
+    /* ================= FILTER: DIVISION ================= */
+    if (divisionId) {
+      sql += ` AND s.division_id = ?`;
+      params.push(Number(divisionId));
+    }
+
+    /* ================= FILTER: CLASS ================= */
+    if (classId) {
+      sql += ` AND s.class_id = ?`;
+      params.push(Number(classId));
+    }
+
+    sql += ` ORDER BY s.id DESC`;
+
+    const [rows]: any = await db.query(sql, params);
 
     return res.json({
       success: true,
@@ -288,7 +306,6 @@ export const createStudent = async (req: Request, res: Response) => {
     });
   }
 };
-
 
 /* =========================================================
    UPDATE STUDENT (FULL FIXED)

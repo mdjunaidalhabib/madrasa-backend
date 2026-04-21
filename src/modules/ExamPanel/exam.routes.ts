@@ -5,8 +5,10 @@ import {
   deleteExam,
   getGeneralGrades,
   saveGeneralGrade,
+  deleteGeneralGrade,
   getMadrasaGrades,
   saveMadrasaGrade,
+  deleteMadrasaGrade,
   getFailMark,
   updateFailMark,
 } from "./exam.controller";
@@ -18,12 +20,15 @@ router.get("/exams", getExams);
 router.post("/exams", createExam);
 router.delete("/exams/:id", deleteExam);
 
-/* ================= GRADES ================= */
+/* ================= GENERAL GRADES ================= */
 router.get("/general-grades", getGeneralGrades);
 router.post("/general-grades", saveGeneralGrade);
+router.delete("/general-grades/:id", deleteGeneralGrade);
 
+/* ================= MADRASA GRADES ================= */
 router.get("/madrasa-grades", getMadrasaGrades);
 router.post("/madrasa-grades", saveMadrasaGrade);
+router.delete("/madrasa-grades/:id", deleteMadrasaGrade);
 
 /* ================= SETTINGS ================= */
 router.get("/fail-mark", getFailMark);
