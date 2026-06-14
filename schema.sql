@@ -264,26 +264,35 @@ INSERT INTO books (class_id,name,name_bn) VALUES
 (5,'masala','মাসআলা'),
 
 -- hifs 
-(6,'Hifz Book','হিফজ কিতাব'),
-(6,'tazbid Book','তাজবিদ কিতাব'),
-(6,'masala Book','মাসআলা কিতাব'),
+(6,'Hifz','হিফজ'),
+(6,'tazbid','তাজবিদ'),
+(6,'masala','মাসআলা'),
 
 
-(7,'Urdu Book','উর্দু কিতাব'),
+(7,'Urdu Kayeda','উর্দু কায়েদা'),
 
--- urdu
-(7,'Urdu Book','উর্দু কিতাব'),
-
--- urdu
-(7,'Urdu Book','উর্দু কিতাব'),
 
 -- taisir
-(8,'Taisir Book','তাইসির কিতাব'),
+(8,'Urdu kayeda','উর্দু কায়েদা'),
+(8,'Urdu tesri','উর্দু তেসরি'),
+(8,'english','ইংরেজি'),
+(8,'bangla','বাংলা'),
+(8,'gonit','গণিত'),
+(8,'english','ইংরেজি'),
+(8,'etihas','ইতিহাস'),
+(8,'vugol','ভূগোল'),
+
+
 
 -- Mizan
-(9,'Mizan Book','মিজান কিতাব'),
-(9,'Sarf Book','সরফ'),
-(9,'Nahw Book','নাহু'),
+(9,'Mizan','মিজান'),
+(9,'esho arbi sikhi','এশো আরবি শিক্ষা'),
+(9,'bakuratul adob','বাকুরাতুল আদব'),
+(9,'behesti jeor','বেহেস্তি জেওর'),
+(9,'tarikhul islam','তারিখুল ইসলাম'),
+(9,'english','ইংরেজি'),
+(9,'bangla','বাংলা'),
+
 
 -- Nahbemir
 (10,'Nahbemir','নাহবেমীর'),
@@ -380,7 +389,7 @@ INSERT INTO module_features (module_id,key_name,name,name_bn,sort_order) VALUES
 
 -- Ihtimam
 (2,'teacher_admission','Teacher Admission','নতুন শিক্ষক',1),
-(2,'all_teacher','All Teachers','শিক্ষকসমূহ',2),
+(2,'teachers','Teachers','শিক্ষকসমূহ',2),
 
 -- reports
 (3,'academic_report','Academic Report','একাডেমিক রিপোর্ট',1),
@@ -706,11 +715,11 @@ CREATE TABLE IF NOT EXISTS exams (
    EXAMS DEMO DATA
 ========================= */
 INSERT INTO exams (name, year) VALUES
-('Mid Term Exam', '2024'),
-('Final Exam', '2024'),
-('Half Yearly Exam', '2025'),
-('Annual Exam', '2025'),
-('Test Exam', '2025')
+('১ম সাময়িক পরিক্ষা', '2026'),
+('২য় সাময়িক পরিক্ষা', '2026'),
+('বার্ষিক পরীক্ষা', '2026'),
+('মাসিক পরীক্ষা', '2026'),
+('টেস্ট পরীক্ষা', '2026')
 ON DUPLICATE KEY UPDATE name=name;
 
 
@@ -768,13 +777,11 @@ CREATE TABLE IF NOT EXISTS madrasa_grades (
    MADRASA GRADES DEMO DATA
 ========================= */
 INSERT INTO madrasa_grades (name, min_mark, max_mark) VALUES
-('Mumtaz', 80, 100),
-('Jayyid Jiddan', 70, 79),
-('Jayyid', 60, 69),
-('Maqbul', 50, 59),
-('Mutawassit', 40, 49),
-('Zaif', 33, 39),
-('Rasib', 0, 32)
+('মুমতাজ', 80, 100),
+('জায়েদ জিদ্দান', 65, 79),
+('জায়েদ', 50, 64),
+('মাকবুল', 35, 49),
+('রাসেব', 0, 34)
 ON DUPLICATE KEY UPDATE name=name;
 
 
