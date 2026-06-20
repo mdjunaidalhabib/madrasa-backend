@@ -406,11 +406,14 @@ INSERT INTO module_features (module_id,key_name,name,name_bn,sort_order) VALUES
 (4,'certificate','Certificate','সনদ / সার্টিফিকেট',7),
 (4,'testimonial','Testimonial','প্রত্যয়ন পত্র',8),
 (4,'transfer_letter','Transfer Letter','ছাড় পত্র',9),
+(4,'bulk_marks','Bulk Marks Import','Bulk নম্বর আপলোড',10),
 
 -- Accounts
 (5,'income','Income','আয়/রশিদ জমা',1),
 (5,'expense','Expense','ব্যয়/ভাউচার তৈরী',2),
 (5,'report','Report','আয় ব্যয় রিপোর্ট',3),
+(5,'fees','Student Fees','ছাত্র বেতন ট্র্যাকিং',4),
+(5,'salaries','Teacher Salaries','শিক্ষক বেতন / পেরোল',5),
 
 -- students
 (6,'new_admission','New Admission','নতুন ভর্তি',1),
